@@ -38,8 +38,9 @@
         
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <div class="flex justify-between items-center">
+          <div :class="['flex items-center', cancelText ? 'justify-between' : 'justify-end']">
             <BaseButton
+              v-if="cancelText"
               variant="secondary"
               size="md"
               @click="close"

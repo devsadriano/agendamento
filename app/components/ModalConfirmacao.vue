@@ -1,27 +1,24 @@
 <template>
   <BaseModal
     v-model="modalVisible"
-    title="Confirmar Exclusão"
-    confirm-text="Deletar"
-    cancel-text="Cancelar"
-    confirm-variant="error"
+    :title="title"
+    :confirm-text="confirmText"
+    :cancel-text="type === 'success' ? undefined : cancelText"
+    :confirm-variant="confirmVariant"
     :loading="loading"
     @confirm="handleConfirm"
     @close="handleClose"
   >
-    <div class="flex items-center space-x-3">
-      <!-- Ícone de aviso -->
+    <div class="flex items-start space-x-4">
+      <!-- Ícone -->
       <div class="flex-shrink-0">
-        <ExclamationTriangleIcon class="h-8 w-8 text-red-500" />
+        <component :is="iconComponent" :class="iconClass" />
       </div>
       
       <!-- Mensagem -->
-      <div>
-        <p class="text-sm text-gray-600">
+      <div class="flex-1">
+        <p class="text-sm text-gray-700 whitespace-pre-line">
           {{ message }}
-        </p>
-        <p class="text-xs text-gray-500 mt-1">
-          Esta ação não pode ser desfeita.
         </p>
       </div>
     </div>
@@ -29,15 +26,25 @@
 </template>
 
 <script setup lang="ts">
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { ExclamationTriangleIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 interface Props {
   modelValue: boolean
   message?: string
+  title?: string
+  confirmText?: string
+  cancelText?: string
+  confirmVariant?: 'error' | 'success' | 'primary'
+  type?: 'error' | 'success' | 'info'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  message: 'Tem certeza que deseja deletar este item?'
+  message: 'Tem certeza que deseja deletar este item?',
+  title: 'Confirmar Exclusão',
+  confirmText: 'Deletar',
+  cancelText: 'Cancelar',
+  confirmVariant: 'error',
+  type: 'error'
 })
 
 const emit = defineEmits<{
@@ -53,6 +60,31 @@ const loading = ref(false)
 const modalVisible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
+})
+
+const iconComponent = computed(() => {
+  switch (props.type) {
+    case 'success':
+      return CheckCircleIcon
+    case 'info':
+      return InformationCircleIcon
+    case 'error':
+    default:
+      return ExclamationTriangleIcon
+  }
+})
+
+const iconClass = computed(() => {
+  const baseClass = 'h-8 w-8'
+  switch (props.type) {
+    case 'success':
+      return `${baseClass} text-green-500`
+    case 'info':
+      return `${baseClass} text-blue-500`
+    case 'error':
+    default:
+      return `${baseClass} text-red-500`
+  }
 })
 
 // Métodos

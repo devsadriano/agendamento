@@ -211,6 +211,45 @@ export const useAuth = () => {
   }
 
   /**
+   * Envia um email para recuperação de senha
+   */
+  const recoverPassword = async (email: string): Promise<AuthResult> => {
+    try {
+      isLoading.value = true
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/recuperar-senha`
+      })
+      
+      if (error) {
+        const authError: AuthError = {
+          message: error.message,
+          code: error.message
+        }
+        
+        // Exibe toast de erro
+        showError('Erro ao enviar email de recuperação: ' + error.message)
+        
+        return { success: false, error: authError }
+      }
+      
+      // Sucesso - não exibe toast aqui pois será exibido via modal
+      return { success: true }
+      
+    } catch (error) {
+      const authError: AuthError = {
+        message: error instanceof Error ? error.message : 'Erro desconhecido'
+      }
+      
+      showError('Erro inesperado ao enviar email de recuperação')
+      
+      return { success: false, error: authError }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * Verifica se o usuário está autenticado
    */
   const isAuthenticated = computed(() => !!user.value)
@@ -231,5 +270,6 @@ export const useAuth = () => {
     logout,
     updatePassword,
     updateUserName,
+    recoverPassword,
   }
 }

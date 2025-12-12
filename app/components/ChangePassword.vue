@@ -179,6 +179,8 @@ const handleSubmit = async () => {
     
     if (result.success) {
       limparFormulario()
+      // Redirecionar para login após sucesso
+      await navigateTo('/login')
     }
     // Se houver erro, o composable useAuth já mostra a mensagem de erro
   } catch (error: any) {
