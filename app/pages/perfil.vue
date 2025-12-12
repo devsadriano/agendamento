@@ -117,15 +117,16 @@ watch(() => profileForm.value.nome, () => {
 
 // Carregar dados do perfil
 const carregarDadosPerfil = () => {
+  const user = useSupabaseUser()
   if (userStore.userProfile) {
     profileForm.value = {
       nome: userStore.userProfile.nome || '',
-      email: 'israel@teste.com' // TODO: Buscar email do usuário autenticado
+      email: user.value?.email || ''
     }
     
     originalProfile.value = {
       nome: userStore.userProfile.nome || '',
-      email: 'israel@teste.com'
+      email: user.value?.email || ''
     }
   }
 }
