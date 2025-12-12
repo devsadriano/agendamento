@@ -92,6 +92,21 @@
         <UsersIcon class="w-5 h-5 flex-shrink-0" />
         <span v-if="!isCollapsed" class="font-medium">Profissionais</span>
       </NuxtLink>
+
+      <!-- 6. Administração (apenas para admins) -->
+      <NuxtLink 
+        v-if="isAdmin"
+        to="/admin" 
+        :class="[
+          'flex items-center p-3 rounded-lg hover:bg-gray-100 transition-colors group',
+          isCollapsed ? 'justify-center' : 'space-x-3',
+          { 'bg-blue-50 text-blue-600 border-r-2 border-blue-600': $route.path === '/admin' }
+        ]"
+        :title="isCollapsed ? 'Administração' : ''"
+      >
+        <CogIcon class="w-5 h-5 flex-shrink-0" />
+        <span v-if="!isCollapsed" class="font-medium">Administração</span>
+      </NuxtLink>
     </nav>
 
     <!-- Footer -->
@@ -125,6 +140,8 @@
 import { ref } from 'vue'
 // Import explícito do composable conforme Nuxt 4 guidelines
 import { useAuth } from '~/composables/useAuth'
+// Import da store do usuário
+import { useUserStore } from '~/stores/user'
 
 // Imports dos ícones do Heroicons
 import {
@@ -141,11 +158,17 @@ import {
 // Import do componente DropdownMenu
 import DropdownMenu from './DropdownMenu.vue'
 
+// Store do usuário
+const userStore = useUserStore()
+
 // Estado do dropdown
 const isDropdownOpen = ref(false)
 
 // Estado do colapso do sidebar
 const isCollapsed = ref(false)
+
+// Verificar se o usuário é admin
+const isAdmin = computed(() => userStore.userRole === 'admin')
 
 // Expor o estado para componentes pais
 defineExpose({
@@ -177,7 +200,7 @@ const handleClickOutside = (event: Event) => {
 }
 
 // Adicionar/remover listener para clique fora
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
