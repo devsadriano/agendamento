@@ -259,6 +259,26 @@ export const useAuth = () => {
    */
   const currentUser = computed(() => user.value)
   
+  /**
+   * Verifica se o usuário é admin chamando a RPC do Supabase
+   */
+  const checkIsAdmin = async (): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('ag_isadmin')
+      
+      if (error) {
+        console.error('Erro ao verificar se é admin:', error)
+        return false
+      }
+      
+      // A RPC retorna { isadmin: true/false }
+      return (data as any)?.isadmin || false
+    } catch (error) {
+      console.error('Erro inesperado ao verificar admin:', error)
+      return false
+    }
+  }
+  
   return {
     // Estados
     isLoading: readonly(isLoading),
@@ -271,5 +291,6 @@ export const useAuth = () => {
     updatePassword,
     updateUserName,
     recoverPassword,
+    checkIsAdmin,
   }
 }

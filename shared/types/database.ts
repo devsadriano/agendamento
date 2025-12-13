@@ -32,7 +32,11 @@ export interface Profissional {
 // Tipos para perfis baseado no retorno da RPC ag_get_profiles_if_admin
 export interface Perfil {
   id: number
-  nome: string
+  created_at: string
+  user_id: string | null
+  nome: string | null
+  role: string | null
+  email: string | null
 }
 
 // Tipos para clientes baseado na tabela ag_clientes
