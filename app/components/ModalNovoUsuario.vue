@@ -10,6 +10,9 @@
     @close="handleClose"
   >
     <form @submit.prevent="handleConfirm" class="space-y-4">
+      <div v-if="errorMessage" class="rounded-md bg-red-50 p-3 text-sm text-red-700">
+        {{ errorMessage }}
+      </div>
       <!-- Nome -->
       <div>
         <label for="novo-usuario-nome" class="block text-sm font-medium text-gray-700 mb-1">
@@ -77,6 +80,7 @@ const emit = defineEmits<{
 
 // Estados
 const loading = ref(false)
+const errorMessage = ref('')
 
 // Formulário
 const form = ref({
@@ -93,18 +97,18 @@ const modalVisible = computed({
 
 // Métodos
 const handleConfirm = () => {
-  // Por enquanto apenas fecha o modal
-  // A ação será implementada depois
+  errorMessage.value = ''
   emit('confirm', { ...form.value })
 }
 
 const handleClose = () => {
-  // Limpar formulário ao fechar
+  // Limpar formulario ao fechar
   form.value = {
     nome: '',
     email: '',
     senha: ''
   }
+  errorMessage.value = ''
   emit('close')
 }
 
@@ -113,7 +117,13 @@ const setLoading = (value: boolean) => {
   loading.value = value
 }
 
+const setError = (message: string) => {
+  errorMessage.value = message
+}
+
 defineExpose({
-  setLoading
+  setLoading,
+  setError
 })
 </script>
+

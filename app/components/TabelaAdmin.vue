@@ -81,6 +81,7 @@
 
     <!-- Modal Novo Usuário -->
     <ModalNovoUsuario
+      ref="modalNovoUsuarioRef"
       v-model="showModalNovoUsuario"
       @confirm="handleConfirmNovoUsuario"
       @close="handleCloseModalNovoUsuario"
@@ -92,6 +93,7 @@
 import { ref, onMounted } from 'vue'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { useProfissionais } from '~/composables/useProfissionais'
+import { useNotification } from '~/composables/useNotification'
 import type { Perfil } from '../../shared/types/database'
 import BaseButton from '~/components/BaseButton.vue'
 import ModalNovoUsuario from '~/components/ModalNovoUsuario.vue'
@@ -104,6 +106,9 @@ const perfis = ref<Perfil[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showModalNovoUsuario = ref(false)
+const modalNovoUsuarioRef = ref<InstanceType<typeof ModalNovoUsuario> | null>(null)
+const criandoUsuario = ref(false)
+const { showSuccess, showError } = useNotification()
 
 // Função para formatar data
 const formatDate = (dateString: string): string => {
@@ -132,14 +137,37 @@ const carregarPerfis = async () => {
 
 // Funções do modal
 const abrirModalNovoUsuario = () => {
+  modalNovoUsuarioRef.value?.setError('')
   showModalNovoUsuario.value = true
 }
 
-const handleConfirmNovoUsuario = (data: { nome: string; email: string; senha: string }) => {
-  // Por enquanto apenas fecha o modal
-  // A ação será implementada depois
-  console.log('Dados do novo usuário:', data)
-  showModalNovoUsuario.value = false
+const handleConfirmNovoUsuario = async (data: { nome: string; email: string; senha: string }) => {
+  if (criandoUsuario.value) return
+  criandoUsuario.value = true
+  modalNovoUsuarioRef.value?.setLoading(true)
+
+  try {
+    await $fetch('/api/create_user', {
+      method: 'POST',
+      body: {
+        nome: data.nome,
+        email: data.email,
+        password: data.senha,
+      },
+    })
+
+    modalNovoUsuarioRef.value?.setError('')
+    showSuccess('Usuario criado com sucesso!')
+    showModalNovoUsuario.value = false
+    await carregarPerfis()
+  } catch (err: any) {
+    const message = err?.data?.statusMessage || err?.message || 'Erro ao criar usuario'
+    modalNovoUsuarioRef.value?.setError(message)
+    showError(message)
+  } finally {
+    modalNovoUsuarioRef.value?.setLoading(false)
+    criandoUsuario.value = false
+  }
 }
 
 const handleCloseModalNovoUsuario = () => {
@@ -152,3 +180,6 @@ onMounted(() => {
   carregarPerfis()
 })
 </script>
+
+
+
