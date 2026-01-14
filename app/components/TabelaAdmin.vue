@@ -17,7 +17,7 @@
 
     <!-- Loading -->
     <div v-if="loading" class="p-6 text-center">
-      <p class="text-gray-500">Carregando usuários...</p>
+      <p class="text-gray-500">Carregando Usuários...</p>
     </div>
 
     <!-- Erro -->
@@ -45,6 +45,9 @@
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Data Criação
             </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Ações
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -69,10 +72,22 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               {{ formatDate(perfil.created_at) }}
             </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex space-x-2">
+                <button
+                  type="button"
+                  class="p-1 rounded transition-colors text-red-600 hover:text-red-900 hover:bg-red-50"
+                  title="Deletar usuario"
+                  @click="abrirConfirmacaoDeletar(perfil)"
+                >
+                  <TrashIcon class="h-5 w-5" />
+                </button>
+              </div>
+            </td>
           </tr>
           <tr v-if="perfis.length === 0">
-            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-              Nenhum usuário encontrado
+            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+              Nenhum Usuário encontrado
             </td>
           </tr>
         </tbody>
@@ -86,17 +101,26 @@
       @confirm="handleConfirmNovoUsuario"
       @close="handleCloseModalNovoUsuario"
     />
+
+    <ModalConfirmacao
+      ref="modalConfirmacaoRef"
+      v-model="showModalConfirmacao"
+      :message="mensagemConfirmacao"
+      @confirm="handleConfirmDeletarUsuario"
+      @close="handleCloseModalConfirmacao"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { PlusIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { useProfissionais } from '~/composables/useProfissionais'
 import { useNotification } from '~/composables/useNotification'
 import type { Perfil } from '../../shared/types/database'
 import BaseButton from '~/components/BaseButton.vue'
 import ModalNovoUsuario from '~/components/ModalNovoUsuario.vue'
+import ModalConfirmacao from '~/components/ModalConfirmacao.vue'
 
 // Composable
 const { buscarPerfis } = useProfissionais()
@@ -109,8 +133,13 @@ const showModalNovoUsuario = ref(false)
 const modalNovoUsuarioRef = ref<InstanceType<typeof ModalNovoUsuario> | null>(null)
 const criandoUsuario = ref(false)
 const { showSuccess, showError } = useNotification()
+const showModalConfirmacao = ref(false)
+const modalConfirmacaoRef = ref<InstanceType<typeof ModalConfirmacao> | null>(null)
+const mensagemConfirmacao = ref('')
+const userIdParaDeletar = ref<string | null>(null)
+const deletandoUsuario = ref(false)
 
-// Função para formatar data
+// FunÇõÇœo para formatar data
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString)
   return date.toLocaleDateString('pt-BR', {
@@ -120,7 +149,7 @@ const formatDate = (dateString: string): string => {
   })
 }
 
-// Função para carregar os perfis
+// FunÇõÇœo para carregar os perfis
 const carregarPerfis = async () => {
   loading.value = true
   error.value = null
@@ -128,14 +157,14 @@ const carregarPerfis = async () => {
   try {
     perfis.value = await buscarPerfis()
   } catch (err: any) {
-    error.value = err.message || 'Erro ao carregar usuários'
+    error.value = err.message || 'Erro ao carregar Usuários'
     console.error('Erro ao carregar perfis:', err)
   } finally {
     loading.value = false
   }
 }
 
-// Funções do modal
+// FunÇõÇæes do modal
 const abrirModalNovoUsuario = () => {
   modalNovoUsuarioRef.value?.setError('')
   showModalNovoUsuario.value = true
@@ -174,12 +203,53 @@ const handleCloseModalNovoUsuario = () => {
   showModalNovoUsuario.value = false
 }
 
+const abrirConfirmacaoDeletar = (perfil: Perfil) => {
+  if (!perfil.user_id) {
+    showError('Nao foi possivel identificar o usuario para deletar.')
+    return
+  }
+
+  userIdParaDeletar.value = perfil.user_id
+  mensagemConfirmacao.value = `Tem certeza que deseja deletar o usuario "${perfil.nome || perfil.email || perfil.user_id}"?`
+  showModalConfirmacao.value = true
+}
+
+const handleConfirmDeletarUsuario = async () => {
+  if (!userIdParaDeletar.value || deletandoUsuario.value) return
+  deletandoUsuario.value = true
+  modalConfirmacaoRef.value?.setLoading(true)
+
+  try {
+    await $fetch('/api/delete_user', {
+      method: 'POST',
+      body: {
+        user_id: userIdParaDeletar.value,
+      },
+    })
+
+    showSuccess('Usuario deletado com sucesso!')
+    showModalConfirmacao.value = false
+    userIdParaDeletar.value = null
+    mensagemConfirmacao.value = ''
+    await carregarPerfis()
+  } catch (err: any) {
+    const message = err?.data?.statusMessage || err?.message || 'Erro ao deletar usuario'
+    showError(message)
+  } finally {
+    modalConfirmacaoRef.value?.setLoading(false)
+    deletandoUsuario.value = false
+  }
+}
+
+const handleCloseModalConfirmacao = () => {
+  showModalConfirmacao.value = false
+  userIdParaDeletar.value = null
+  mensagemConfirmacao.value = ''
+}
+
 // Carregar perfis quando o componente for montado
-// Isso só acontece após o middleware ter validado que o user é admin
+// Isso sÇü acontece apÇüs o middleware ter validado que o user Ç¸ admin
 onMounted(() => {
   carregarPerfis()
 })
 </script>
-
-
-
